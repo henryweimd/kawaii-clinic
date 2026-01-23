@@ -1,8 +1,8 @@
-import { GoogleGenAI, Type, Schema } from "@google/genai";
+import { GoogleGenAI, Type } from "@google/genai";
 import { PatientCase, MedicalImage } from "../types";
 
 // Define the schema strictly for the model
-const patientCaseSchema: Schema = {
+const patientCaseSchema = {
   type: Type.OBJECT,
   properties: {
     name: { type: Type.STRING, description: "Cute first name of the patient" },
@@ -84,12 +84,13 @@ const getAI = () => {
 
 const generateAvatar = async (details: { name: string, occupation: string, age: number, symptoms: string[] }): Promise<string | undefined> => {
   const aiInstance = getAI();
-  const model = aiInstance.models;
 
-  const prompt = `A cute 3D kawaii chibi human character, style of Animal Crossing New Horizons. Name: ${details.name}, Job: ${details.occupation}. Expression: Mildly unwell. Art style: 3D render, soft lighting, clay-like texture, pastel colors, white background. High quality 3D icon.`;
+  // Refined prompt for high-quality, professional game art style
+  const prompt = `Masterpiece, high-quality 3D chibi human character, professionally produced video game asset. Style of high-end 3D cozy games. Name: ${details.name}, Occupation: ${details.occupation}. Expression: Mildly unwell but cute. Art style: Octane render, 4k, soft cinematic lighting, clay-like smooth texture, high detail, pastel colors, solid white background. Nintendo Switch aesthetics.`;
 
   try {
-    const response = await model.generateContent({
+    // Fix: Using aiInstance.models.generateContent directly as per SDK guidelines.
+    const response = await aiInstance.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [{ text: prompt }]
@@ -116,12 +117,13 @@ const generateAvatar = async (details: { name: string, occupation: string, age: 
 
 const generateMedicalFindingImage = async (findingDescription: string): Promise<string | undefined> => {
   const aiInstance = getAI();
-  const model = aiInstance.models;
 
-  const prompt = `A cozy, kawaii-style medical illustration for a clinical chart. Finding: ${findingDescription}. Style: Soft hand-drawn aesthetic, pastel colors, clean white background, educational but very cute and friendly. Avoid realistic gore. Aesthetic: Cozy game UI element.`;
+  // Refined prompt for professional game icons/findings
+  const prompt = `Professional video game UI illustration for a medical chart finding. Concept: ${findingDescription}. Style: Clean vector-style or polished 3D render, soft hand-painted textures, pastel medical palette, clean white background. Educational but aesthetic, high production quality, masterpiece level. No gore.`;
 
   try {
-    const response = await model.generateContent({
+    // Fix: Using aiInstance.models.generateContent directly as per SDK guidelines.
+    const response = await aiInstance.models.generateContent({
       model: 'gemini-2.5-flash-image',
       contents: {
         parts: [{ text: prompt }]
@@ -148,37 +150,38 @@ const generateMedicalFindingImage = async (findingDescription: string): Promise<
 
 export const generatePatientCase = async (playerXp: number = 0): Promise<PatientCase> => {
   const aiInstance = getAI();
-  const model = aiInstance.models;
 
   // Difficulty Logic
   const isAdvancedEligible = playerXp >= 300;
   const requestedDifficulty = (isAdvancedEligible && Math.random() > 0.5) ? "advanced" : "beginner";
 
   const SYSTEM_INSTRUCTION = `
-You are the Game Master for "Kawaii Clinic", a fictional cozy medical simulation game.
+You are the Lead Narrative Doctor for "Kawaii Clinic", a high-end cozy medical simulation game.
 Generate a patient case JSON for the game.
-1. The aesthetic is "Cozy/Kawaii".
-2. The medical condition should be accurate but presented safely.
+1. The aesthetic is "Cozy/Kawaii/Nintendo-style".
+2. The medical conditions must be realistic and scientifically grounded, but presented in a user-friendly way.
 3. DIFFICULTY: ${requestedDifficulty.toUpperCase()}.
    - If "beginner": Provide exactly 1 stage.
-   - If "advanced": Provide 2 or 3 stages.
-4. "medicalImageDescription": If the diagnosis typically involves a visual finding (e.g. skin rash, X-ray, ECG, eye exam), provide a short description for an artist.
+   - If "advanced": Provide 2 or 3 stages forming a logical sequence.
+4. "medicalImageDescription": If the diagnosis involves a visual finding (e.g. skin rash, X-ray, ECG), provide a detailed visual description for a professional artist.
 `;
 
   try {
     // 1. Generate the Case Text
-    const textResponse = await model.generateContent({
-      model: "gemini-3-flash-preview",
+    // Fix: Using aiInstance.models.generateContent directly.
+    // Fix: Using gemini-3-pro-preview for complex diagnostic reasoning and logic tasks.
+    const textResponse = await aiInstance.models.generateContent({
+      model: "gemini-3-pro-preview",
       contents: {
         role: 'user',
-        parts: [{ text: `Generate a random ${requestedDifficulty} patient case.` }]
+        parts: [{ text: `Generate a random high-quality ${requestedDifficulty} patient case with professional medical logic.` }]
       },
       config: {
         systemInstruction: SYSTEM_INSTRUCTION,
         responseMimeType: "application/json",
         responseSchema: patientCaseSchema,
-        temperature: 0.8,
-        thinkingConfig: requestedDifficulty === 'advanced' ? { thinkingBudget: 1024 } : undefined,
+        temperature: 0.9,
+        thinkingConfig: requestedDifficulty === 'advanced' ? { thinkingBudget: 2048 } : undefined,
       },
     });
 
@@ -223,28 +226,28 @@ Generate a patient case JSON for the game.
     return {
       id: crypto.randomUUID(),
       difficulty: 'beginner',
-      name: "Daisy",
-      age: 24,
-      occupation: "Professional Napper",
-      avatarSeed: "daisy-fallback",
-      symptoms: ["Sneezing", "Runny nose", "Mild fatigue"],
-      vitals: { temp: "37.2°C", bp: "110/70", hr: "72 bpm" },
+      name: "Dr. Fallback",
+      age: 30,
+      occupation: "Safety Coordinator",
+      avatarSeed: "fallback-hero",
+      symptoms: ["System Hiccup", "Glitchy vision"],
+      vitals: { temp: "36.6°C", bp: "120/80", hr: "60 bpm" },
       stages: [
         {
           id: "s1",
-          dialogue: "Doctor! *sniff* My nose won't stop running like a little faucet! It's super annoying when I'm trying to nap.",
+          dialogue: "Oh no! It looks like my data got tangled. Can you prescribe a quick system restart?",
           correctChoiceId: "c1",
           choices: [
-            { id: "c1", label: "Prescribe rest and fluids", feedback: "Perfect! Daisy feels better already." },
-            { id: "c2", label: "Emergency Surgery", feedback: "Oh no! That's way too extreme for a cold!" },
-            { id: "c3", label: "Refer to cardiologist", feedback: "Her heart sounds fine, just a sniffle!" },
+            { id: "c1", label: "Apply Digital Patches", feedback: "Connection restored! Thank you, Doctor." },
+            { id: "c2", label: "Defragment Drive", feedback: "A bit old school, but okay!" },
+            { id: "c3", label: "Buy New Pager", feedback: "Pagers are expensive, let's try the patch first!" },
           ]
         }
       ],
-      diagnosis: "Common Cold",
-      medicalExplanation: "The common cold is a viral infection of your nose and throat. It's usually harmless.",
+      diagnosis: "Temporary Connection Glitch",
+      medicalExplanation: "Sometimes even the best clinics have technical difficulties! This fallback case ensures you can keep playing while we fix the connection.",
       trustedSources: [
-        { title: "Mayo Clinic", url: "https://www.mayoclinic.org/diseases-conditions/common-cold/symptoms-causes/syc-20351605" }
+        { title: "Kawaii Clinic Support", url: "https://example.com" }
       ],
       isFallback: true,
     };

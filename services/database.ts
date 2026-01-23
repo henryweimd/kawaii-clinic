@@ -1,10 +1,11 @@
 import { PatientCase, CaseStats, User } from "../types";
 
 const KEYS = {
-  CASES: 'kawaii_clinic_cases_v1',
-  SEEN: 'kawaii_clinic_seen_v1', // This should technically be per-user, but keeping global for now for simplicity
-  STATS: 'kawaii_clinic_stats_v1',
-  USERS: 'kawaii_clinic_users_v1', // New key for user dictionary
+  // Bumping version to v2 to clear old amateurish content
+  CASES: 'kawaii_clinic_cases_v2',
+  SEEN: 'kawaii_clinic_seen_v2', 
+  STATS: 'kawaii_clinic_stats_v2',
+  USERS: 'kawaii_clinic_users_v2', 
 };
 
 // Simulate a backend database delay
@@ -84,13 +85,12 @@ class DatabaseService {
       const cases = this.getStoredItem<PatientCase[]>(KEYS.CASES, []);
       // Avoid duplicates
       if (!cases.find(c => c.id === patientCase.id)) {
-        // IMPORTANT: Strip the base64 imageUrl to prevent LocalStorage quota exceeded errors.
-        // The app handles missing imageUrl by falling back to the avatarSeed (DiceBear).
+        // Strip the base64 imageUrl to prevent LocalStorage quota exceeded errors.
         const { imageUrl, ...caseData } = patientCase;
         cases.push(caseData as PatientCase);
         
-        // LIMIT HISTORY to 50 items to prevent Quota Exceeded
-        if (cases.length > 50) {
+        // LIMIT HISTORY to 30 items for better performance
+        if (cases.length > 30) {
            cases.shift(); // Remove oldest
         }
         
@@ -98,7 +98,6 @@ class DatabaseService {
       }
     } catch (error) {
       console.error("Database save error:", error);
-      // Suppress error so game continues even if save fails
     }
   }
 
@@ -127,7 +126,6 @@ class DatabaseService {
     return allCases.filter(c => !seenIds.includes(c.id));
   }
   
-  // New method to check specific IDs (useful for checking against permanent file)
   async isCaseSeen(caseId: string): Promise<boolean> {
      const seenIds = this.getStoredItem<string[]>(KEYS.SEEN, []);
      return seenIds.includes(caseId);
